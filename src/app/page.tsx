@@ -1,5 +1,6 @@
 import Image from "next/image";
 import UserInput from "@/components/research/UserInput";
+import { QnA } from "@/components/research/qna";
 export default function Home() {
   return (
 
@@ -13,6 +14,7 @@ export default function Home() {
         </p>
       </div>
       <UserInput />
+      <QnA />
     </main>
   );
 }

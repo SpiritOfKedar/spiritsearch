@@ -35,9 +35,7 @@ export async function POST(req: Request) {
     try {
         const questions = await clarfiyResearch(topic);
         console.log(questions);
-        return NextResponse.json({
-            success: true
-        }, { status: 200 });
+        return NextResponse.json(questions);
     } catch (error) {
         console.log(error);
         return NextResponse.json({

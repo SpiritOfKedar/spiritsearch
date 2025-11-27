@@ -6,10 +6,12 @@ import { useForm } from "react-hook-form"
 import { Button } from "../ui/button"
 import { Form, FormControl, FormField, FormMessage, FormItem } from "../ui/form";
 import { Input } from "../ui/input"
+import { useDeepResearchStore } from "@/store/deepResearch"
 const formSchema = z.object({
     input: z.string().min(2).max(200),
 })
 const UserInput = () => {
+    const { setQuestions, setTopic } = useDeepResearchStore()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -18,6 +20,7 @@ const UserInput = () => {
     })
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
+            setTopic(values.input);
             const response = await fetch("/api/generate-questions", {
                 method: "POST",
                 headers: {
@@ -26,7 +29,12 @@ const UserInput = () => {
                 body: JSON.stringify({ topic: values.input }),
             })
             const data = await response.json();
-            console.log(data);
+            console.log("API Response:", data);
+
+            // Extract questions array from response
+            if (data && data.questions) {
+                setQuestions(data.questions);
+            }
         } catch (error) {
             console.log(error);
         }
