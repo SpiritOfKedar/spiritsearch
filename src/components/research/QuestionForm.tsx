@@ -45,6 +45,7 @@ export default function QuestionForm() {
         newAnswers[currentQuestion] = values.answer;
         setAnswers(newAnswers);
         if (currentQuestion === questions.length - 1) {
+            setIsLoading(true);
             setIsCompleted(true);
         } else {
             // Move to next question (useEffect will update the form)
@@ -87,6 +88,11 @@ export default function QuestionForm() {
                             <Button type="submit"
                                 disabled={isLoading}
                             >
+                                {isLoading && (
+                                    <span className="flex items-center mr-2">
+                                        <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+                                    </span>
+                                )}
                                 {currentQuestion === questions.length - 1 ? "Start Research" : "Next"}
                             </Button>
                         </div>

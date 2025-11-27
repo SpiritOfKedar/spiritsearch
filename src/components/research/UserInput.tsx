@@ -11,7 +11,7 @@ const formSchema = z.object({
     input: z.string().min(2).max(200),
 })
 const UserInput = () => {
-    const { setQuestions, setTopic } = useDeepResearchStore()
+    const { setQuestions, setTopic, setIsLoading, isLoading } = useDeepResearchStore()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -20,6 +20,7 @@ const UserInput = () => {
     })
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
+            setIsLoading(true);
             setTopic(values.input);
             const response = await fetch("/api/generate-questions", {
                 method: "POST",
@@ -37,6 +38,8 @@ const UserInput = () => {
             }
         } catch (error) {
             console.log(error);
+        } finally {
+            setIsLoading(false);
         }
     }
     return (
@@ -55,7 +58,14 @@ const UserInput = () => {
                         </FormItem>
                     )}
                 />
-                <Button type="submit" className="rounded-full px-6 cursor-pointer">Submit</Button>
+                <Button type="submit" className="rounded-full px-6 cursor-pointer" disabled={isLoading}>
+                    {isLoading && (
+                        <span className="flex items-center mr-2">
+                            <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+                        </span>
+                    )}
+                    {isLoading ? "Generating..." : "Submit"}
+                </Button>
             </form>
         </Form>
     )
