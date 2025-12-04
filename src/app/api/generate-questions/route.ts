@@ -17,7 +17,7 @@ const clarfiyResearch = async (topic: string) => {
     `
     try {
         const { object } = await generateObject({
-            model: openrouter("x-ai/grok-4.1-fast:free"),
+            model: openrouter("openai/gpt-oss-20b:free"),
             prompt: prompt,
             schema: z.object({
                 questions: z.array(z.string())

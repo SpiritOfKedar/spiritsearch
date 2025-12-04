@@ -7,7 +7,7 @@ import { getPlanningPrompt, PLANNING_SYSTEM_PROMPT } from "./prompts";
 
 export async function generateSearchQueries(researchState: ResearchState) {
     const result = await callModel({
-        model: "x-ai/grok-4.1-fast:free",
+        model: "openai/gpt-oss-20b:free",
         prompt: getPlanningPrompt(researchState.topic, researchState.clarificationText),
         system: PLANNING_SYSTEM_PROMPT,
         schema: z.object({
