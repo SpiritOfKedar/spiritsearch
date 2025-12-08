@@ -1,17 +1,11 @@
 "use client"
 import React, { useEffect } from "react"
-import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
+import { useUIMessageStream } from 'ai';
 import { useDeepResearchStore } from "@/store/deepResearch"
 import QuestionForm from "./QuestionForm"
+
 export const QnA = () => {
     const { questions, isCompleted, topic, answers, setIsLoading } = useDeepResearchStore();
-
-    const { sendMessage, messages, status } = useChat({
-        transport: new DefaultChatTransport({
-            api: "/api/deep-research"
-        })
-    });
 
     useEffect(() => {
         if (isCompleted && questions.length > 0) {
@@ -26,31 +20,39 @@ export const QnA = () => {
                 clarifications: clarifications
             });
 
+            console.log("📤 Sending deep research request:", messageContent);
             setIsLoading(true);
 
-            sendMessage({
-                role: "user",
-                parts: [{
-                    type: "text",
-                    text: messageContent
-                }]
-            });
+            // Make direct fetch call to the API
+            fetch("/api/deep-research", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            role: "user",
+                            content: messageContent
+                        }
+                    ]
+                })
+            })
+                .then(response => {
+                    console.log("✅ Research request sent successfully");
+                    // Handle streaming response here
+                    return response.body;
+                })
+                .catch(error => {
+                    console.error("❌ Error sending research request:", error);
+                    setIsLoading(false);
+                });
         }
-    }, [isCompleted, questions, answers, topic, sendMessage, setIsLoading]);
-
-    // Update loading state based on chat status
-    useEffect(() => {
-        if (status === 'streaming' || status === 'submitted') {
-            setIsLoading(true);
-        } else if (status === 'ready') {
-            setIsLoading(false);
-        }
-    }, [status, setIsLoading]);
+    }, [isCompleted, questions, answers, topic, setIsLoading]);
 
     return (
         <div className="flex gap-4 w-full flex-col items-center justify-center mb-16">
-            <QuestionForm
-            />
+            <QuestionForm />
         </div>
     )
 }

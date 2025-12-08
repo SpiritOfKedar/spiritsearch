@@ -1,77 +1,57 @@
-import { parse } from "path";
-import { createUIMessageStreamResponse, createUIMessageStream } from "ai";
-import { deepResearchMain } from "./main";
+import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { ResearchState } from "./types";
+import { deepResearch } from "./main";
 
 export async function POST(req: Request) {
     try {
-        const body = await req.json();
-        console.log("Received request body:", JSON.stringify(body, null, 2));
+        console.log("📨 POST request received at /api/deep-research");
+        const { messages } = await req.json();
+        console.log("📥 Messages received:", messages?.length || 0);
 
-        // In AI SDK v2, messages have a 'parts' array structure
-        const { messages } = body;
+        const lastMessageContent = messages[messages.length - 1].content;
+        console.log("📝 Last message content:", lastMessageContent);
 
-        if (!messages || messages.length === 0) {
-            console.error("No messages received");
-            return new Response(JSON.stringify({
-                success: false,
-                error: "No messages provided"
-            }), { status: 400 });
-        }
+        const parsed = JSON.parse(lastMessageContent);
+        console.log("✅ Parsed:", parsed);
 
-        const lastMessage = messages[messages.length - 1];
-        console.log("Last message:", JSON.stringify(lastMessage, null, 2));
-
-        // Extract text from the parts array
-        let messageText = "";
-        if (lastMessage.parts && Array.isArray(lastMessage.parts)) {
-            const textPart = lastMessage.parts.find((part: any) => part.type === "text");
-            if (textPart) {
-                messageText = textPart.text;
-            }
-        } else if (lastMessage.content) {
-            // Fallback for older format
-            messageText = lastMessage.content;
-        }
-
-        console.log("Extracted message text:", messageText);
-
-        // Parse the JSON content
-        const parsed = JSON.parse(messageText);
-        console.log("Parsed object:", JSON.stringify(parsed, null, 2));
-        const clarifications = parsed.clarifications;
         const topic = parsed.topic;
+        const clarifications = parsed.clarifications || parsed.clerifications || [];
+        console.log("🎯 Topic:", topic);
+        console.log("📋 Clarifications:", clarifications);
 
 
-        // TODO: Process the parsed data (topic and clarifications)
-        // For now, just return success
-        // Create a streaming response using AI SDK v5
-        return createUIMessageStreamResponse({
-            stream: createUIMessageStream({
-                execute: async ({ writer }) => {
-                    const researchState: ResearchState = {
-                        topic: topic,
-                        completedSteps: 0,
-                        tokenUsed: 0,
-                        findings: [],
-                        processedUrls: new Set(),
-                        clarificationText: JSON.stringify(clarifications)
-                    }
-                    await deepResearchMain(researchState, writer);
+        const stream = createUIMessageStream({
+            execute: async (dataStream) => {
+                console.log("🌊 Stream execution started");
+                // Write data
+                //   dataStream.writeData({ value: 'Hello' });
+
+                const researchState: ResearchState = {
+                    topic: topic,
+                    completedSteps: 0,
+                    tokenUsed: 0,
+                    findings: [],
+                    processedUrl: new Set(),
+                    clarificationsText: JSON.stringify(clarifications)
                 }
-            })
-        })
+                console.log("🔬 Calling deepResearch with state:", researchState.topic);
+                await deepResearch(researchState, dataStream)
 
-    } catch (error) {
-        console.error("Error in /api/deep-research:", error);
-        return new Response(JSON.stringify({
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error"
-        }), {
-            status: 500,
-            headers: {
-                'Content-Type': 'application/json'
-            }
+
+            },
+            // onError: error => `Custom error: ${error.message}`,
         });
+
+        return createUIMessageStreamResponse({ stream });
+    } catch (error) {
+
+        return new Response(
+            JSON.stringify({
+                success: false,
+                error: error instanceof Error ? error.message : "Invalid message format!"
+            }),
+            { status: 200 }
+        );
+
     }
 }
